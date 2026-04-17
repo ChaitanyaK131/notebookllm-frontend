@@ -6,34 +6,16 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [file, setFile] = useState(null);
 
-  // Mode switching
   const [mode, setMode] = useState("chat");
 
-  // Quiz states
+  // Quiz states (dynamic)
+  const [quizData, setQuizData] = useState([]);
   const [currentQ, setCurrentQ] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState(null);
 
-  const API_URL = "https://your-backend.onrender.com";
-
-  // Quiz data
-  const quizData = [
-    {
-      question: "What is AI?",
-      options: ["Artificial Ice", "Artificial Intelligence", "Auto Input", "None"],
-      answer: "Artificial Intelligence"
-    },
-    {
-      question: "React is a?",
-      options: ["Library", "Language", "OS", "Database"],
-      answer: "Library"
-    },
-    {
-      question: "Which language is popular for AI?",
-      options: ["Python", "HTML", "CSS", "C"],
-      answer: "Python"
-    }
-  ];
+  // 🔥 YOUR BACKEND URL HERE
+  const API_URL = "https://notebookllm-backend.vercel.app";
 
   // Quotes
   const quotes = [
@@ -56,7 +38,7 @@ function App() {
     setQuote(random);
   };
 
-  // Ask Question
+  // ✅ ASK QUESTION (Backend)
   const askQuestion = async () => {
     if (!question) return;
 
@@ -82,18 +64,22 @@ function App() {
     setQuestion("");
   };
 
-  // Upload file
+  // ✅ UPLOAD FILE (Backend)
   const uploadFile = async () => {
     if (!file) return alert("Select a file");
 
     const formData = new FormData();
     formData.append("file", file);
 
-    await axios.post(`${API_URL}/upload`, formData);
-    alert("File uploaded!");
+    try {
+      await axios.post(`${API_URL}/upload`, formData);
+      alert("File uploaded!");
+    } catch {
+      alert("Upload failed");
+    }
   };
 
-  // Summary
+  // ✅ SUMMARY (Backend)
   const summarize = async () => {
     try {
       const res = await axios.get(`${API_URL}/summary`);
@@ -101,6 +87,19 @@ function App() {
       setMode("chat");
     } catch {
       alert("Error summarizing");
+    }
+  };
+
+  // ✅ LOAD QUIZ FROM BACKEND
+  const loadQuiz = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/quiz`);
+      setQuizData(res.data.quiz); // backend should send quiz array
+      setMode("quiz");
+      setCurrentQ(0);
+      setScore(0);
+    } catch {
+      alert("Error loading quiz");
     }
   };
 
@@ -139,7 +138,7 @@ function App() {
 
         <button onClick={() => setMode("chat")} style={btn}>💬 Ask Questions</button>
         <button onClick={summarize} style={btnBlue}>🧾 Summary</button>
-        <button onClick={() => setMode("quiz")} style={btnPurple}>🧠 Quiz</button>
+        <button onClick={loadQuiz} style={btnPurple}>🧠 Quiz</button>
 
         <hr style={{ borderColor: "#444" }} />
 
@@ -210,7 +209,7 @@ function App() {
           <>
             <h1>🧠 Quiz</h1>
 
-            {currentQ < quizData.length ? (
+            {quizData.length > 0 && currentQ < quizData.length ? (
               <>
                 <h3>{quizData[currentQ].question}</h3>
 
